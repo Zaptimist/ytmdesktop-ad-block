@@ -6,19 +6,22 @@ A fork of [ytmdesktop](https://github.com/ytmdesktop/ytmdesktop) with **built-in
 
 ## Ad Blocking
 
-This fork includes a three-layer ad blocking system that runs automatically:
+This fork includes a four-layer ad blocking system that runs automatically — no configuration needed:
 
-| Layer                 | How it works                                                                                                                                                                                                                                       |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Network blocking**  | Blocks ad-serving requests (Google Ads, DoubleClick, tracking endpoints) using [EasyList](https://easylist.to/) + [EasyPrivacy](https://easylist.to/) filter lists via the [Ghostery/Brave adblocker engine](https://github.com/nicedoc/adblocker) |
-| **Cosmetic hiding**   | CSS injection that hides ad overlays, promotional banners, and premium upsell prompts                                                                                                                                                              |
-| **Video ad skipping** | Automatically skips pre-roll and mid-roll video ads using a MutationObserver + periodic check                                                                                                                                                      |
-
-> **Note:** Video ads may briefly flash (~500ms) before being auto-skipped. This is expected — the ad must begin loading before it can be detected and skipped.
+| Layer                 | How it works                                                                                                                                                                                                                                                                                                                |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **API interception**  | Patches `fetch` and `XMLHttpRequest` before page JS executes to strip `adPlacements`, `playerAds`, `adSlots` and tracking fields from YouTube's `/youtubei/v1/player` and `/next` API responses. The player never knows ads exist. Same approach as [ReVanced](https://github.com/ReVanced) and [Brave](https://brave.com). |
+| **Network blocking**  | Blocks ad-serving requests (Google Ads, DoubleClick, tracking endpoints) using [EasyList](https://easylist.to/) + [EasyPrivacy](https://easylist.to/) filter lists via the [Ghostery adblocker engine](https://github.com/nicedoc/adblocker).                                                                               |
+| **Cosmetic hiding**   | CSS injection that hides ad overlays, promotional banners, and premium upsell prompts.                                                                                                                                                                                                                                      |
+| **Video ad skipping** | Fallback layer: if an ad somehow slips through, it is instantly muted, sped up to 16x, and seeked to the end.                                                                                                                                                                                                               |
 
 ## Installation
 
-### From source (recommended)
+### Pre-built installer (Windows)
+
+Download the latest Setup `.exe` from the [Releases](https://github.com/Zaptimist/ytmdesktop-ad-block/releases) page and run it.
+
+### From source
 
 Requires [Git](https://git-scm.com) and [Node.js v20+](https://nodejs.org/).
 
@@ -29,7 +32,7 @@ npm install --legacy-peer-deps
 npm run make
 ```
 
-The installer will be at `out/make/squirrel.windows/x64/YouTube Music Desktop App-2.0.11 Setup.exe`. Run it to install.
+The installer will be at `out/make/squirrel.windows/x64/`. Run the Setup `.exe` to install.
 
 ### Development mode
 
