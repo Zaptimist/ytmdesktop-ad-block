@@ -1,48 +1,76 @@
-# YouTube Music Desktop App
-### Now with a Fresh new Codebase 😉
+# YouTube Music Desktop App (Ad-Free Fork)
+
+A fork of [ytmdesktop](https://github.com/ytmdesktop/ytmdesktop) with **built-in ad blocking**. Listen to YouTube Music without interruptions — no browser extensions needed.
 
 ![YouTube Music Desktop App](.github/images/readme_main_app.png)
 
-[![Discord][discord-img]][discord-url]
-[![Gitmoji][gitmoji-img]][gitmoji-url]
-[![GitHub license][license-img]][license-url]
-[![GitHub release][release-img]][release-url]
-[![Download][download-img]][download-url]
+## Ad Blocking
 
-<!--
-TODO: Write guides for v2. While these may still be helpful they are geared towards v1
-#### 📖 Guide:
-1. [How to use](https://github.com/ytmdesktop/ytmdesktop/wiki/How-use)
-2. [FAQ](https://github.com/ytmdesktop/ytmdesktop/wiki/FAQ)
--->
+This fork includes a three-layer ad blocking system that runs automatically:
+
+| Layer                 | How it works                                                                                                                                                                                                                                       |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Network blocking**  | Blocks ad-serving requests (Google Ads, DoubleClick, tracking endpoints) using [EasyList](https://easylist.to/) + [EasyPrivacy](https://easylist.to/) filter lists via the [Ghostery/Brave adblocker engine](https://github.com/nicedoc/adblocker) |
+| **Cosmetic hiding**   | CSS injection that hides ad overlays, promotional banners, and premium upsell prompts                                                                                                                                                              |
+| **Video ad skipping** | Automatically skips pre-roll and mid-roll video ads using a MutationObserver + periodic check                                                                                                                                                      |
+
+> **Note:** Video ads may briefly flash (~500ms) before being auto-skipped. This is expected — the ad must begin loading before it can be detected and skipped.
+
+## Installation
+
+### From source (recommended)
+
+Requires [Git](https://git-scm.com) and [Node.js v20+](https://nodejs.org/).
+
+```sh
+git clone https://github.com/Zaptimist/ytmdesktop-ad-block.git
+cd ytmdesktop-ad-block
+npm install --legacy-peer-deps
+npm run make
+```
+
+The installer will be at `out/make/squirrel.windows/x64/YouTube Music Desktop App-2.0.11 Setup.exe`. Run it to install.
+
+### Development mode
+
+```sh
+npm start
+```
 
 # ⬇️ Download at
+
 <a href="https://repology.org/project/ytmdesktop/versions">
 	<img type="image/svg" align="right" src="https://repology.org/badge/vertical-allrepos/ytmdesktop.svg" alt="Packaging status"/>
 </a>
 
 #### Windows
+
 <!--
 ### UPDATE THESE PLATFORMS ###
 - Chocolatey: ```choco install ytmdesktop```
 -->
-- Winget: ```winget install "YouTube Music Desktop App"``` or ```winget install Ytmdesktop.Ytmdesktop```
-- Scoop: ```scoop bucket add extras``` then ```scoop install ytmdesktop``` (Community Maintained)
+
+- Winget: `winget install "YouTube Music Desktop App"` or `winget install Ytmdesktop.Ytmdesktop`
+- Scoop: `scoop bucket add extras` then `scoop install ytmdesktop` (Community Maintained)
 - Binaries: <https://github.com/ytmdesktop/ytmdesktop/releases>
 
 #### Linux
+
 <!--
 ### UPDATE THESE PLATFORMS ###
 - Snap: <https://snapcraft.io/youtube-music-desktop-app>
 -->
+
 - Arch Linux (AUR): <https://aur.archlinux.org/packages/ytmdesktop> (Community Maintained)
 - Binaries: <https://github.com/ytmdesktop/ytmdesktop/releases>
 
 #### Mac
-- Brew: ```brew install --cask ytmdesktop-youtube-music``` (Community Maintained)
+
+- Brew: `brew install --cask ytmdesktop-youtube-music` (Community Maintained)
 - Binaries: <https://github.com/ytmdesktop/ytmdesktop/releases>
 
 # Developing
+
 To clone and run this repository you'll need [Git](https://git-scm.com) and [Node.js (v20)](https://nodejs.org/en/download/) (which comes with [npm](http://npmjs.com)) installed on your computer. From your command line:
 
 ```sh
@@ -51,7 +79,9 @@ git clone https://github.com/ytmdesktop/ytmdesktop.git
 # Go into the directory
 cd ytmdesktop
 ```
+
 ##### And:
+
 ```sh
 # If you do not have Yarn Installed / New to Node as a whole you can enable Yarn with:
 corepack enable
@@ -63,9 +93,11 @@ yarn start
 ```
 
 # Building the Project
+
 To build for your platform you need to run `yarn make`, however please see the information below regarding the required additionally Software, Tools and Packages which are needed to successfully package into a nice installer file.
 
 ## Windows
+
 To download the full suite of Tools/Software needed to build the app it is recommended to install the suite of build tools that electron provide which includes Visual Studio, Python and other tools.
 
 `npm i -g @electron/build-tools`
@@ -79,11 +111,13 @@ TODO: Fill this information in
 -->
 
 ## Linux
+
 Building the project on Linux only requires you to install:
+
 - For building on Debian based Linux Distros like Ubuntu, you will need to install `fakeroot` and `dpkg`
 - For building on RedHat based Linux Distros like Fedora, you will need to install `rpm` or `rpm-build`
 
-*please note that by default both packages are built if you try building this application on a linux distro*
+_please note that by default both packages are built if you try building this application on a linux distro_
 
 <!--
 ### Note to the note, I suspect this has been fixed now, testing myself I was able to run the software without anything extra, although did have to sepecify `--disable-gpu` to run.
