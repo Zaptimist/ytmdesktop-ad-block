@@ -280,6 +280,11 @@ window.addEventListener("load", async () => {
 
   const integrationScripts: { [integrationName: string]: { [scriptName: string]: string } } = await ipcRenderer.invoke("ytmView:getIntegrationScripts");
 
+  // Auto-execute ad blocker script on page load
+  if (integrationScripts["adBlocker"] && integrationScripts["adBlocker"]["adSkip"]) {
+    (await webFrame.executeJavaScript(integrationScripts["adBlocker"]["adSkip"]))();
+  }
+
   const state = await store.get("state");
   const continueWhereYouLeftOff = (await store.get("playback")).continueWhereYouLeftOff;
 

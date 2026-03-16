@@ -28,6 +28,7 @@ import MemoryStore from "./memory-store";
 import playerStateStore, { PlayerState, VideoState } from "./player-state-store";
 import { MemoryStoreSchema, StoreSchema, TrayIconStyle } from "../shared/store/schema";
 
+import AdBlocker from "./integrations/ad-blocker";
 import CompanionServer from "./integrations/companion-server";
 import CustomCSS from "./integrations/custom-css";
 import DiscordPresence from "./integrations/discord-presence";
@@ -161,6 +162,7 @@ const template: MenuItemConstructorOptions[] = [{ role: "appMenu", label: "YouTu
 const builtMenu = isDarwin ? Menu.buildFromTemplate(template) : null; // null for performance https://www.electronjs.org/docs/latest/tutorial/performance#8-call-menusetapplicationmenunull-when-you-do-not-need-a-default-menu
 Menu.setApplicationMenu(builtMenu);
 
+const adBlocker = new AdBlocker();
 const companionServer = new CompanionServer();
 const customCss = new CustomCSS();
 const discordPresence = new DiscordPresence();
@@ -1030,6 +1032,7 @@ const createYTMView = (): void => {
       autoplayPolicy: store.get("playback.continueWhereYouLeftOffPaused") ? "document-user-activation-required" : "no-user-gesture-required"
     }
   });
+  adBlocker.provide(ytmView);
   companionServer.provide(store, memoryStore, ytmView);
   customCss.provide(store, ytmView);
   ratioVolume.provide(ytmView);
@@ -1635,6 +1638,11 @@ app.on("ready", async () => {
     if (event.sender !== ytmView.webContents) return;
 
     playerStateStore.updateFromStore(queue, likeStatus, volume, muted, adPlaying);
+
+    // Ad Blocker: when YTM reports an ad is playing, trigger the ad-skip script
+    if (adPlaying && ytmView) {
+      ytmView.webContents.send("ytmView:executeScript", "adBlocker", "adSkip");
+    }
   });
 
   ipcMain.on("ytmView:switchFocus", (event, context) => {
@@ -1891,10 +1899,19 @@ app.on("ready", async () => {
   }
 
   // Integrations preflight initialization
+  ytmViewIntegrationScripts["adBlocker"] = adBlocker.getYTMScripts().reduce<{ [name: string]: string }>((map, obj) => {
+    map[obj.name] = obj.script;
+    return map;
+  }, {});
   ytmViewIntegrationScripts["ratioVolume"] = ratioVolume.getYTMScripts().reduce<{ [name: string]: string }>((map, obj) => {
     map[obj.name] = obj.script;
     return map;
   }, {});
+
+  // Ad Blocker - always enabled, initialize before creating YTM view
+  // so network blocking is active before any content loads
+  await adBlocker.enable();
+  log.info("Integration enabled: Ad Blocker");
 
   // Create the YouTube Music view
   createYTMView();
