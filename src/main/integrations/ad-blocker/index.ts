@@ -1,5 +1,5 @@
 import { BrowserView, ipcMain } from "electron";
-import { ElectronBlocker } from "@ghostery/adblocker-electron";
+import { FiltersEngine, Request } from "@ghostery/adblocker";
 import fetch from "cross-fetch";
 import log from "electron-log";
 
@@ -111,7 +111,7 @@ const AD_SKIP_SCRIPT = `
 
 export default class AdBlocker implements IIntegration {
   private ytmView: BrowserView;
-  private blocker: ElectronBlocker | null = null;
+  private engine: FiltersEngine | null = null;
   private isEnabled = false;
   private cssKey: string | null = null;
   private ipcListener: (() => void) | null = null;
@@ -134,11 +134,21 @@ export default class AdBlocker implements IIntegration {
     log.info("Ad Blocker: Initializing...");
 
     try {
-      // Load filter lists with ONLY network blocking enabled.
-      // Cosmetic scriptlet injection is disabled because it conflicts with
-      // YTM's Polymer framework (causes infinite Object.apply recursion).
-      // We handle cosmetic hiding ourselves via CSS injection instead.
-      this.blocker = await ElectronBlocker.fromLists(fetch, FILTER_LISTS, {
+      // Download and parse filter lists into a network-only blocking engine.
+      // We skip cosmetic filters entirely — CSS hiding and ad-skip are handled
+      // by our own injection to avoid conflicts with YTM's Polymer framework.
+      const lists = await Promise.all(
+        FILTER_LISTS.map(url =>
+          fetch(url)
+            .then(r => r.text())
+            .catch(e => {
+              log.warn(`Ad Blocker: Failed to fetch ${url}`, e);
+              return "";
+            })
+        )
+      );
+
+      this.engine = FiltersEngine.parse(lists.join("\n"), {
         loadCosmeticFilters: false,
         loadNetworkFilters: true
       });
@@ -155,12 +165,9 @@ export default class AdBlocker implements IIntegration {
   public disable(): void {
     this.isEnabled = false;
 
-    if (this.blocker && this.ytmView) {
-      try {
-        this.blocker.disableBlockingInSession(this.ytmView.webContents.session);
-      } catch (e) {
-        log.warn("Ad Blocker: Error disabling session blocking", e);
-      }
+    if (this.ytmView) {
+      // Remove the onBeforeRequest handler by setting it to null
+      this.ytmView.webContents.session.webRequest.onBeforeRequest(null);
     }
 
     if (this.cssKey && this.ytmView) {
@@ -174,7 +181,7 @@ export default class AdBlocker implements IIntegration {
     }
 
     this.cosmeticsInjected = false;
-    this.blocker = null;
+    this.engine = null;
     log.info("Ad Blocker: Disabled");
   }
 
@@ -190,9 +197,24 @@ export default class AdBlocker implements IIntegration {
   // --------------------------------------------------
 
   private applyToSession(): void {
-    if (!this.blocker || !this.ytmView) return;
+    if (!this.engine || !this.ytmView) return;
 
-    this.blocker.enableBlockingInSession(this.ytmView.webContents.session);
+    const engine = this.engine;
+    this.ytmView.webContents.session.webRequest.onBeforeRequest((details, callback) => {
+      const { match } = engine.match(
+        Request.fromRawDetails({
+          url: details.url,
+          sourceUrl: details.referrer || details.url,
+          type: details.resourceType
+        })
+      );
+
+      if (match) {
+        log.debug(`Ad Blocker: Blocked ${details.url.substring(0, 80)}`);
+      }
+      callback({ cancel: match });
+    });
+
     log.info("Ad Blocker: Network-level blocking enabled on ytmview session");
   }
 
@@ -202,7 +224,6 @@ export default class AdBlocker implements IIntegration {
     }
 
     this.ipcListener = () => {
-      // Only inject once per page load cycle (reset on ytmView change via provide())
       if (!this.cosmeticsInjected) {
         this.cosmeticsInjected = true;
         this.injectCosmetics();
