@@ -36,76 +36,110 @@ const AD_HIDE_CSS = `
   }
 `;
 
-// Script injected into YTM to auto-skip video ads and close ad overlays.
-// Uses a re-entrancy guard to prevent infinite MutationObserver loops.
+// Script injected into YTM's main world to instantly skip video ads.
+// Hooks directly into YTM's internal Redux store for real-time ad detection,
+// then mutes + seeks to end of the ad video.
 const AD_SKIP_SCRIPT = `
 (function() {
   'use strict';
 
-  // Prevent double-init if script is executed more than once
   if (window.__YTMD_AD_SKIP_ACTIVE__) return;
   window.__YTMD_AD_SKIP_ACTIVE__ = true;
 
-  let isProcessing = false;
+  var savedVolume = -1;
+  var adActive = false;
 
-  function skipAd() {
-    // Re-entrancy guard: DOM changes from skipAd must not re-trigger skipAd
-    if (isProcessing) return;
-    isProcessing = true;
+  function killAd() {
+    var video = document.querySelector('video');
+    if (!video) return;
 
-    try {
-      // 1. Click skip button if available
-      var skipButton = document.querySelector(
-        '.ytp-ad-skip-button, .ytp-ad-skip-button-modern, .ytp-skip-ad-button, ' +
-        '.ytp-ad-skip-button-slot button'
-      );
-      if (skipButton) {
-        skipButton.click();
-        return;
-      }
-
-      // 2. Force-skip unskippable video ads by seeking to end
-      var video = document.querySelector('video');
-      var adIndicator = document.querySelector(
-        '.ad-showing, .ytp-ad-player-overlay, .ytp-ad-player-overlay-instream-info'
-      );
-      if (video && adIndicator && video.duration && isFinite(video.duration) && video.duration > 0) {
-        video.currentTime = video.duration;
-      }
-
-      // 3. Close overlay/banner ads
-      document.querySelectorAll(
-        '.ytp-ad-overlay-close-button, .ytp-ad-overlay-close-container'
-      ).forEach(function(btn) { btn.click(); });
-    } finally {
-      // Release the guard asynchronously so the observer can settle
-      setTimeout(function() { isProcessing = false; }, 100);
+    // Mute immediately so user hears nothing
+    if (!adActive) {
+      savedVolume = video.volume;
+      adActive = true;
     }
-  }
+    video.volume = 0;
 
-  // MutationObserver to detect ad DOM changes
-  var observer = new MutationObserver(function() { skipAd(); });
+    // Speed up to max so ad ends ASAP
+    try { video.playbackRate = 16; } catch(e) {}
 
-  function startObserving() {
-    var player = document.querySelector('#movie_player, ytmusic-player, #player');
-    if (player) {
-      observer.observe(player, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        attributeFilter: ['class']
-      });
+    // Seek to end
+    if (video.duration && isFinite(video.duration) && video.duration > 0) {
+      video.currentTime = video.duration;
     }
+
+    // Click any skip button
+    var skip = document.querySelector(
+      '.ytp-ad-skip-button, .ytp-ad-skip-button-modern, .ytp-skip-ad-button, ' +
+      '.ytp-ad-skip-button-slot button, .ytp-ad-skip-button-container button'
+    );
+    if (skip) skip.click();
+
+    // Close overlay ads
+    document.querySelectorAll(
+      '.ytp-ad-overlay-close-button, .ytp-ad-overlay-close-container'
+    ).forEach(function(btn) { btn.click(); });
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', startObserving);
-  } else {
-    startObserving();
+  function restoreAfterAd() {
+    if (!adActive) return;
+    adActive = false;
+
+    var video = document.querySelector('video');
+    if (video) {
+      video.volume = savedVolume >= 0 ? savedVolume : 1;
+      try { video.playbackRate = 1; } catch(e) {}
+    }
+    savedVolume = -1;
   }
 
-  // Safety net: periodic check every 1s
-  setInterval(skipAd, 1000);
+  // PRIMARY: Subscribe to YTM's internal store for instant adPlaying detection
+  // This fires the moment YouTube flags an ad — zero delay.
+  if (window.__YTMD_HOOK__ && window.__YTMD_HOOK__.ytmStore) {
+    var store = window.__YTMD_HOOK__.ytmStore;
+    var wasAdPlaying = false;
+
+    store.subscribe(function() {
+      var state = store.getState();
+      var isAd = state.player && state.player.adPlaying;
+
+      if (isAd && !wasAdPlaying) {
+        killAd();
+        // Keep hammering in case seek/skip doesn't work first try
+        var hammer = setInterval(function() {
+          var s = store.getState();
+          if (s.player && s.player.adPlaying) {
+            killAd();
+          } else {
+            clearInterval(hammer);
+            restoreAfterAd();
+          }
+        }, 50);
+      }
+      wasAdPlaying = isAd;
+    });
+  }
+
+  // SECONDARY: Fast interval as fallback for ads the store might miss
+  setInterval(function() {
+    // Check via DOM: .ad-showing class on the player
+    var player = document.querySelector('#movie_player');
+    var isAd = player && player.classList.contains('ad-showing');
+
+    if (isAd) {
+      killAd();
+    } else if (adActive) {
+      // Also check store if available
+      var storeAd = false;
+      if (window.__YTMD_HOOK__ && window.__YTMD_HOOK__.ytmStore) {
+        var state = window.__YTMD_HOOK__.ytmStore.getState();
+        storeAd = state.player && state.player.adPlaying;
+      }
+      if (!storeAd) {
+        restoreAfterAd();
+      }
+    }
+  }, 100);
 })
 `;
 

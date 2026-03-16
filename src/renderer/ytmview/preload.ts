@@ -216,6 +216,126 @@ function getYTMTextRun(runs: { text: string }[]) {
   )();
 })();
 
+// Ad Blocker: Intercept fetch/XHR to strip ad data from YouTube's player API responses.
+// This runs BEFORE the page's JavaScript executes, so the player never sees ad placements.
+// Same approach as ReVanced/Brave: remove adPlacements, playerAds, adSlots from API responses.
+(async function () {
+  (
+    await webFrame.executeJavaScript(`
+    (function() {
+      // --- Patch fetch ---
+      var originalFetch = window.fetch;
+      window.fetch = function() {
+        var args = arguments;
+        var url = typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url ? args[0].url : '');
+
+        var isPlayerApi = url.indexOf('/youtubei/v1/player') !== -1;
+        var isNextApi = url.indexOf('/youtubei/v1/next') !== -1;
+        var isBrowseApi = url.indexOf('/youtubei/v1/browse') !== -1;
+
+        if (!isPlayerApi && !isNextApi && !isBrowseApi) {
+          return originalFetch.apply(this, args);
+        }
+
+        return originalFetch.apply(this, args).then(function(response) {
+          var cloned = response.clone();
+          return cloned.text().then(function(bodyText) {
+            try {
+              var json = JSON.parse(bodyText);
+              // Strip ad-related fields from player API
+              delete json.adPlacements;
+              delete json.adSlots;
+              delete json.playerAds;
+              delete json.adParams;
+              delete json.adBreakParams;
+              delete json.adBreakHeartbeatParams;
+
+              if (json.playerConfig) {
+                delete json.playerConfig.adRequestConfig;
+              }
+              if (json.playbackTracking) {
+                delete json.playbackTracking.ptrackingUrl;
+                delete json.playbackTracking.qoeUrl;
+                delete json.playbackTracking.atrUrl;
+              }
+
+              // Strip ad entries from browse/next responses
+              if (json.contents) {
+                var str = JSON.stringify(json.contents);
+                if (str.indexOf('promoted') !== -1 || str.indexOf('adSlot') !== -1) {
+                  str = str.replace(/"adSlot[^}]*}/g, '');
+                  try { json.contents = JSON.parse(str); } catch(e) {}
+                }
+              }
+
+              return new Response(JSON.stringify(json), {
+                status: response.status,
+                statusText: response.statusText,
+                headers: response.headers,
+              });
+            } catch(e) {
+              // Not JSON or parse error, return original
+              return response;
+            }
+          });
+        });
+      };
+
+      // --- Patch XMLHttpRequest ---
+      var XHR = XMLHttpRequest.prototype;
+      var originalOpen = XHR.open;
+      var originalSend = XHR.send;
+
+      XHR.open = function(method, url) {
+        this.__ytmd_url = url;
+        return originalOpen.apply(this, arguments);
+      };
+
+      XHR.send = function() {
+        var self = this;
+        var url = self.__ytmd_url || '';
+        var needsPatch = url.indexOf('/youtubei/v1/player') !== -1 ||
+                         url.indexOf('/youtubei/v1/next') !== -1;
+
+        if (needsPatch) {
+          var originalOnReadyStateChange = self.onreadystatechange;
+          self.onreadystatechange = function() {
+            if (self.readyState === 4) {
+              try {
+                var json = JSON.parse(self.responseText);
+                delete json.adPlacements;
+                delete json.adSlots;
+                delete json.playerAds;
+                delete json.adParams;
+                delete json.adBreakParams;
+                delete json.adBreakHeartbeatParams;
+
+                if (json.playerConfig) {
+                  delete json.playerConfig.adRequestConfig;
+                }
+
+                Object.defineProperty(self, 'responseText', {
+                  writable: true,
+                  value: JSON.stringify(json)
+                });
+                Object.defineProperty(self, 'response', {
+                  writable: true,
+                  value: JSON.stringify(json)
+                });
+              } catch(e) {}
+            }
+            if (originalOnReadyStateChange) {
+              originalOnReadyStateChange.apply(self, arguments);
+            }
+          };
+        }
+        return originalSend.apply(this, arguments);
+      };
+    })
+  `)
+  )();
+})();
+
 window.addEventListener("load", async () => {
   if (window.location.hostname !== "music.youtube.com") {
     if (window.location.hostname === "consent.youtube.com" || window.location.hostname === "accounts.google.com") {
