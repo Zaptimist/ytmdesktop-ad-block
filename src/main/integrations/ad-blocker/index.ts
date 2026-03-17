@@ -34,6 +34,100 @@ const AD_HIDE_CSS = `
   tp-yt-paper-dialog:has(ytmusic-you-there-renderer) {
     display: none !important;
   }
+
+  /* Force audio-only: hide the video element in the player.
+     The Song mode script handles switching to audio counterparts,
+     but for tracks without a Song version this CSS hides the video
+     so the album art / thumbnail is visible instead. */
+  #movie_player .html5-video-container video {
+    visibility: hidden !important;
+  }
+`;
+
+// Script injected into YTM to force "Song" mode instead of "Video" mode.
+// When a music video (OMV/UGC) starts playing, this detects it via the playerApi
+// and navigates to the audio-only counterpart (ATV) if available.
+// This saves significant CPU/GPU resources by avoiding video decode entirely.
+const FORCE_SONG_MODE_SCRIPT = `
+(function() {
+  'use strict';
+
+  if (window.__YTMD_FORCE_SONG_MODE__) return;
+  window.__YTMD_FORCE_SONG_MODE__ = true;
+
+  var ytmStore = window.__YTMD_HOOK__ && window.__YTMD_HOOK__.ytmStore;
+  if (!ytmStore) return;
+
+  var playerBar = document.querySelector("ytmusic-app-layout>ytmusic-player-bar");
+  if (!playerBar || !playerBar.playerApi) return;
+
+  var lastHandledVideoId = '';
+  var isSwitching = false;
+
+  playerBar.playerApi.addEventListener("onVideoDataChange", function(event) {
+    if (event.playertype !== 1 || event.type !== 'dataloaded') return;
+    if (isSwitching) return;
+
+    var response = playerBar.playerApi.getPlayerResponse();
+    if (!response || !response.videoDetails) return;
+
+    var musicVideoType = response.videoDetails.musicVideoType;
+    var videoId = response.videoDetails.videoId;
+
+    // Only switch for actual music videos, not audio tracks / uploads / podcasts
+    if (musicVideoType !== 'MUSIC_VIDEO_TYPE_OMV' &&
+        musicVideoType !== 'MUSIC_VIDEO_TYPE_UGC') {
+      lastHandledVideoId = videoId;
+      return;
+    }
+
+    // Don't re-trigger for the same video
+    if (videoId === lastHandledVideoId) return;
+    lastHandledVideoId = videoId;
+
+    // Look for the Song counterpart in the queue
+    var state = ytmStore.getState();
+    if (!state.queue || !state.queue.items) return;
+
+    var idx = state.queue.selectedItemIndex;
+    if (idx === undefined || idx === null || !state.queue.items[idx]) return;
+
+    var counterparts = state.queue.items[idx].counterparts;
+    if (!counterparts || counterparts.length === 0) return;
+
+    // Find a counterpart with a different videoId (the Song/ATV version)
+    var songId = null;
+    for (var i = 0; i < counterparts.length; i++) {
+      if (counterparts[i].videoId && counterparts[i].videoId !== videoId) {
+        songId = counterparts[i].videoId;
+        break;
+      }
+    }
+
+    if (!songId) return;
+
+    // Mark as handled to prevent re-triggering when the Song version loads
+    lastHandledVideoId = songId;
+    isSwitching = true;
+
+    var playlistId = playerBar.playerApi.getPlaylistId() || '';
+    document.dispatchEvent(new CustomEvent('yt-navigate', {
+      detail: {
+        endpoint: {
+          watchEndpoint: {
+            videoId: songId,
+            playlistId: playlistId
+          }
+        }
+      },
+      bubbles: true,
+      composed: true
+    }));
+
+    // Reset switching flag after navigation completes
+    setTimeout(function() { isSwitching = false; }, 3000);
+  });
+})
 `;
 
 // Script injected into YTM's main world to instantly skip video ads.
@@ -224,6 +318,10 @@ export default class AdBlocker implements IIntegration {
       {
         name: "adSkip",
         script: AD_SKIP_SCRIPT
+      },
+      {
+        name: "forceSongMode",
+        script: FORCE_SONG_MODE_SCRIPT
       }
     ];
   }

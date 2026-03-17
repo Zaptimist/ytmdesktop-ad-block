@@ -311,8 +311,8 @@ function getYTMTextRun(runs: { text: string }[]) {
                 delete json.adBreakHeartbeatParams;
 
                 if (json.playerConfig) {
-                  delete json.playerConfig.adRequestConfig;
-                }
+                   delete json.playerConfig.adRequestConfig;
+                 }
 
                 Object.defineProperty(self, 'responseText', {
                   writable: true,
@@ -400,9 +400,14 @@ window.addEventListener("load", async () => {
 
   const integrationScripts: { [integrationName: string]: { [scriptName: string]: string } } = await ipcRenderer.invoke("ytmView:getIntegrationScripts");
 
-  // Auto-execute ad blocker script on page load
-  if (integrationScripts["adBlocker"] && integrationScripts["adBlocker"]["adSkip"]) {
-    (await webFrame.executeJavaScript(integrationScripts["adBlocker"]["adSkip"]))();
+  // Auto-execute ad blocker scripts on page load
+  if (integrationScripts["adBlocker"]) {
+    if (integrationScripts["adBlocker"]["adSkip"]) {
+      (await webFrame.executeJavaScript(integrationScripts["adBlocker"]["adSkip"]))();
+    }
+    if (integrationScripts["adBlocker"]["forceSongMode"]) {
+      (await webFrame.executeJavaScript(integrationScripts["adBlocker"]["forceSongMode"]))();
+    }
   }
 
   const state = await store.get("state");
