@@ -40,37 +40,11 @@ The installer will be at `out/make/squirrel.windows/x64/`. Run the Setup `.exe` 
 npm start
 ```
 
-# ⬇️ Download at
+# Download
 
-<a href="https://repology.org/project/ytmdesktop/versions">
-	<img type="image/svg" align="right" src="https://repology.org/badge/vertical-allrepos/ytmdesktop.svg" alt="Packaging status"/>
-</a>
+**[Download the latest release](https://github.com/Zaptimist/ytmdesktop-ad-block/releases/latest)** (Windows `.exe` installer)
 
-#### Windows
-
-<!--
-### UPDATE THESE PLATFORMS ###
-- Chocolatey: ```choco install ytmdesktop```
--->
-
-- Winget: `winget install "YouTube Music Desktop App"` or `winget install Ytmdesktop.Ytmdesktop`
-- Scoop: `scoop bucket add extras` then `scoop install ytmdesktop` (Community Maintained)
-- Binaries: <https://github.com/ytmdesktop/ytmdesktop/releases>
-
-#### Linux
-
-<!--
-### UPDATE THESE PLATFORMS ###
-- Snap: <https://snapcraft.io/youtube-music-desktop-app>
--->
-
-- Arch Linux (AUR): <https://aur.archlinux.org/packages/ytmdesktop> (Community Maintained)
-- Binaries: <https://github.com/ytmdesktop/ytmdesktop/releases>
-
-#### Mac
-
-- Brew: `brew install --cask ytmdesktop-youtube-music` (Community Maintained)
-- Binaries: <https://github.com/ytmdesktop/ytmdesktop/releases>
+> Looking for the original (without ad blocking)? See [ytmdesktop/ytmdesktop](https://github.com/ytmdesktop/ytmdesktop/releases).
 
 # Developing
 
