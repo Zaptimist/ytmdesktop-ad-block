@@ -15,13 +15,13 @@ This fork includes a four-layer ad blocking system that runs automatically — n
 | **Cosmetic hiding**   | CSS injection that hides ad overlays, promotional banners, and premium upsell prompts.                                                                                                                                                        |
 | **Video ad skipping** | Fallback layer: if an ad somehow slips through, it is instantly muted, sped up to 16x, and seeked to the end.                                                                                                                                 |
 
-## Installation
+## Download
 
-### Pre-built installer (Windows)
+**[Download the latest release](https://github.com/Zaptimist/ytmdesktop-ad-block/releases/latest)** (Windows `.exe` installer)
 
-Download the latest Setup `.exe` from the [Releases](https://github.com/Zaptimist/ytmdesktop-ad-block/releases) page and run it.
+> Looking for the original (without ad blocking)? See [ytmdesktop/ytmdesktop](https://github.com/ytmdesktop/ytmdesktop/releases).
 
-### From source
+## Building from source
 
 Requires [Git](https://git-scm.com) and [Node.js v20+](https://nodejs.org/).
 
@@ -34,77 +34,11 @@ npm run make
 
 The installer will be at `out/make/squirrel.windows/x64/`. Run the Setup `.exe` to install.
 
-### Development mode
+For development mode (with hot-reload):
 
 ```sh
 npm start
 ```
-
-# Download
-
-**[Download the latest release](https://github.com/Zaptimist/ytmdesktop-ad-block/releases/latest)** (Windows `.exe` installer)
-
-> Looking for the original (without ad blocking)? See [ytmdesktop/ytmdesktop](https://github.com/ytmdesktop/ytmdesktop/releases).
-
-# Developing
-
-To clone and run this repository you'll need [Git](https://git-scm.com) and [Node.js (v20)](https://nodejs.org/en/download/) (which comes with [npm](http://npmjs.com)) installed on your computer. From your command line:
-
-```sh
-# Clone this repository
-git clone https://github.com/ytmdesktop/ytmdesktop.git
-# Go into the directory
-cd ytmdesktop
-```
-
-##### And:
-
-```sh
-# If you do not have Yarn Installed / New to Node as a whole you can enable Yarn with:
-corepack enable
-
-# Install dependencies
-yarn install
-# Run the app
-yarn start
-```
-
-# Building the Project
-
-To build for your platform you need to run `yarn make`, however please see the information below regarding the required additionally Software, Tools and Packages which are needed to successfully package into a nice installer file.
-
-## Windows
-
-To download the full suite of Tools/Software needed to build the app it is recommended to install the suite of build tools that electron provide which includes Visual Studio, Python and other tools.
-
-`npm i -g @electron/build-tools`
-
-This will start downloading and installing, and may require a few prompts here and there to finalise everything.
-
-<!--
-TODO: Fill this information in
-## MacOS
-*to do*
--->
-
-## Linux
-
-Building the project on Linux only requires you to install:
-
-- For building on Debian based Linux Distros like Ubuntu, you will need to install `fakeroot` and `dpkg`
-- For building on RedHat based Linux Distros like Fedora, you will need to install `rpm` or `rpm-build`
-
-_please note that by default both packages are built if you try building this application on a linux distro_
-
-<!--
-### Note to the note, I suspect this has been fixed now, testing myself I was able to run the software without anything extra, although did have to sepecify `--disable-gpu` to run.
-**Note:** If you're using Windows Subsystem for Linux (WSL2), [see this guide][more] or use `node` from the command prompt. -->
-
-<!--
-Project currently doesn't have Locales, so Ignore this for now.
-## To contribute for your own language
-Navigate to [ytmdesktop-locales](https://github.com/ytmdesktop/ytmdesktop-locales) and follow the instructions there.
--->
 
 ## Original Project Contributors
 
