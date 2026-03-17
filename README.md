@@ -1,6 +1,6 @@
 # YouTube Music Desktop App (Ad-Free Fork)
 
-A fork of [ytmdesktop](https://github.com/ytmdesktop/ytmdesktop) with **built-in ad blocking**. Listen to YouTube Music without interruptions — no browser extensions needed.
+A fork of [ytmdesktop](https://github.com/ytmdesktop/ytmdesktop) with **built-in ad blocking**. Listen to YouTube Music without interruptions.
 
 ![YouTube Music Desktop App](.github/images/readme_main_app.png)
 
@@ -8,12 +8,12 @@ A fork of [ytmdesktop](https://github.com/ytmdesktop/ytmdesktop) with **built-in
 
 This fork includes a four-layer ad blocking system that runs automatically — no configuration needed:
 
-| Layer                 | How it works                                                                                                                                                                                                                                                                                                                |
-| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **API interception**  | Patches `fetch` and `XMLHttpRequest` before page JS executes to strip `adPlacements`, `playerAds`, `adSlots` and tracking fields from YouTube's `/youtubei/v1/player` and `/next` API responses. The player never knows ads exist. Same approach as [ReVanced](https://github.com/ReVanced) and [Brave](https://brave.com). |
-| **Network blocking**  | Blocks ad-serving requests (Google Ads, DoubleClick, tracking endpoints) using [EasyList](https://easylist.to/) + [EasyPrivacy](https://easylist.to/) filter lists via the [Ghostery adblocker engine](https://github.com/nicedoc/adblocker).                                                                               |
-| **Cosmetic hiding**   | CSS injection that hides ad overlays, promotional banners, and premium upsell prompts.                                                                                                                                                                                                                                      |
-| **Video ad skipping** | Fallback layer: if an ad somehow slips through, it is instantly muted, sped up to 16x, and seeked to the end.                                                                                                                                                                                                               |
+| Layer                 | How it works                                                                                                                                                                                                                                  |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **API interception**  | Patches `fetch` and `XMLHttpRequest` before page JS executes to strip `adPlacements`, `playerAds`, `adSlots` and tracking fields from YouTube's `/youtubei/v1/player` and `/next` API responses.                                              |
+| **Network blocking**  | Blocks ad-serving requests (Google Ads, DoubleClick, tracking endpoints) using [EasyList](https://easylist.to/) + [EasyPrivacy](https://easylist.to/) filter lists via the [Ghostery adblocker engine](https://github.com/nicedoc/adblocker). |
+| **Cosmetic hiding**   | CSS injection that hides ad overlays, promotional banners, and premium upsell prompts.                                                                                                                                                        |
+| **Video ad skipping** | Fallback layer: if an ad somehow slips through, it is instantly muted, sped up to 16x, and seeked to the end.                                                                                                                                 |
 
 ## Installation
 
@@ -106,9 +106,9 @@ Project currently doesn't have Locales, so Ignore this for now.
 Navigate to [ytmdesktop-locales](https://github.com/ytmdesktop/ytmdesktop-locales) and follow the instructions there.
 -->
 
-## Contributors
+## Original Project Contributors
 
-A Thank you to all the contributors throughout the project, without their work this project would have just been a small project and never expanded to where it is now.
+This fork builds on the work of the [ytmdesktop](https://github.com/ytmdesktop/ytmdesktop) contributors:
 
 [<img alt="adlerluiz" src="https://avatars.githubusercontent.com/u/2112638?v=4&s=240" width="120" height="120">](https://github.com/adlerluiz)
 [<img alt="NovusTheory" src="https://avatars.githubusercontent.com/u/3434404?v=4&s=240" width="120" height="120">](https://github.com/NovusTheory)
