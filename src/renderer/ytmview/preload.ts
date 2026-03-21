@@ -408,6 +408,9 @@ window.addEventListener("load", async () => {
     if (integrationScripts["adBlocker"]["forceSongMode"]) {
       (await webFrame.executeJavaScript(integrationScripts["adBlocker"]["forceSongMode"]))();
     }
+    if (integrationScripts["adBlocker"]["autoDismissYouThere"]) {
+      (await webFrame.executeJavaScript(integrationScripts["adBlocker"]["autoDismissYouThere"]))();
+    }
   }
 
   const state = await store.get("state");

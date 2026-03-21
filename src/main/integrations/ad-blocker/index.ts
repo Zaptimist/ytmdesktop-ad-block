@@ -29,9 +29,7 @@ const AD_HIDE_CSS = `
   ytmusic-promoted-sparkles-text-search-renderer,
   ytmusic-statement-banner-renderer,
   .ytmusic-mealbar-promo-renderer,
-  ytmusic-you-there-renderer,
-  tp-yt-paper-dialog:has(.ytmusic-mealbar-promo-renderer),
-  tp-yt-paper-dialog:has(ytmusic-you-there-renderer) {
+  tp-yt-paper-dialog:has(.ytmusic-mealbar-promo-renderer) {
     display: none !important;
   }
 
@@ -127,6 +125,84 @@ const FORCE_SONG_MODE_SCRIPT = `
     // Reset switching flag after navigation completes
     setTimeout(function() { isSwitching = false; }, 3000);
   });
+})
+`;
+
+// Script injected into YTM to auto-dismiss the "Are you still listening?" popup.
+// YouTube Music pauses playback after long idle periods and shows a confirmation dialog.
+// Simply hiding it with CSS is not enough — the music stays paused. This observer
+// detects the popup and clicks the dismiss button automatically, resuming playback.
+const AUTO_DISMISS_YOU_THERE_SCRIPT = `
+(function() {
+  'use strict';
+
+  if (window.__YTMD_YOU_THERE_DISMISS__) return;
+  window.__YTMD_YOU_THERE_DISMISS__ = true;
+
+  // Check if the "you there" dialog is actually visible and active
+  function isYouThereActive() {
+    var dialog = document.querySelector('ytmusic-you-there-renderer');
+    if (!dialog) return false;
+
+    // Check if it's part of an open paper-dialog
+    var paperDialog = dialog.closest('tp-yt-paper-dialog');
+    if (paperDialog && paperDialog.style.display === 'none') return false;
+
+    // Check if the element itself is visible (has dimensions)
+    var rect = dialog.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0;
+  }
+
+  function dismissYouThere() {
+    if (!isYouThereActive()) return false;
+
+    var dialog = document.querySelector('ytmusic-you-there-renderer');
+    var button = dialog.querySelector('#button button, tp-yt-paper-button#button, .yt-spec-button-shape-next');
+    if (!button) {
+      button = dialog.querySelector('button, tp-yt-paper-button, a[role="button"]');
+    }
+
+    if (button) {
+      button.click();
+
+      // Resume playback after dismissing — the popup pauses the player
+      setTimeout(function() {
+        var playerBar = document.querySelector('ytmusic-app-layout>ytmusic-player-bar');
+        if (playerBar && playerBar.playerApi && !playerBar.playing) {
+          playerBar.playerApi.playVideo();
+        }
+      }, 500);
+
+      return true;
+    }
+
+    return false;
+  }
+
+  // Watch for the dialog appearing in the DOM
+  var observer = new MutationObserver(function(mutations) {
+    for (var i = 0; i < mutations.length; i++) {
+      var mutation = mutations[i];
+      for (var j = 0; j < mutation.addedNodes.length; j++) {
+        var node = mutation.addedNodes[j];
+        if (node.nodeType !== 1) continue;
+
+        if (node.tagName === 'YTMUSIC-YOU-THERE-RENDERER' ||
+            (node.querySelector && node.querySelector('ytmusic-you-there-renderer'))) {
+          setTimeout(dismissYouThere, 200);
+        }
+      }
+    }
+  });
+
+  observer.observe(document.body, { childList: true, subtree: true });
+
+  // Polling as safety net — only acts when popup is actually visible
+  setInterval(function() {
+    if (isYouThereActive()) {
+      dismissYouThere();
+    }
+  }, 1000);
 })
 `;
 
@@ -322,6 +398,10 @@ export default class AdBlocker implements IIntegration {
       {
         name: "forceSongMode",
         script: FORCE_SONG_MODE_SCRIPT
+      },
+      {
+        name: "autoDismissYouThere",
+        script: AUTO_DISMISS_YOU_THERE_SCRIPT
       }
     ];
   }
