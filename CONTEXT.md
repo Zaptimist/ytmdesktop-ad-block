@@ -17,3 +17,7 @@ This is an Electron/Vue YouTube Music desktop fork with built-in ad blocking. El
 TypeScript uses bundler resolution to match Vite, avoiding a wildcard alias that hid installed package declarations. The companion-server error handler uses Fastify's error type and public Socket.IO type exports.
 
 Live anonymous startup, visible music UI and desktop volume control have been verified on Linux with software rendering. Windows, signed-in playback, hardware acceleration, installation and updates require their own runtime verification. A live-site check can fail when YouTube or the network changes; retain the evidence rather than weakening the assertion.
+
+## Release builds
+
+The manual `Windows Release Build` workflow builds Windows x64 artifacts with Node.js 24 and the npm lockfile. It points the compiled updater at the current fork, and only uploads build artifacts; publishing a GitHub release is a separate authorized step. Tag pushes no longer invoke the old multi-platform publishing workflow. See the release section in [README.md](README.md).

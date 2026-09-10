@@ -57,6 +57,12 @@ Each run prints an `out/startup-*` directory containing `result.json`, `electron
 
 An internet connection and a working graphical session are required. Network/consent failures are failures, not skipped tests. This checks anonymous startup and volume control, not signed-in playback, installer behavior, updates, or hardware acceleration. Run it on Windows for Windows-specific assurance; a Linux pass does not prove the Windows build works.
 
+## Creating a Windows release
+
+The **Windows Release Build** workflow (`.github/workflows/publish.yml`) is manually dispatched against the intended commit/branch. It installs the npm lockfile on Windows with Node.js 24, checks TypeScript, builds the x64 installer, and uploads `windows-x64-release`. Update `package.json` and `package-lock.json` to the release version before running it.
+
+The workflow builds with this fork's update-feed owner and repository. It does **not** publish automatically when a tag is pushed. After checking the build and test evidence, an explicitly authorized release can be created with its installer, `RELEASES` and `.nupkg` assets. Keep the `v<version>-adblock` tag convention and make sure the embedded app version matches it.
+
 ## Original Project Contributors
 
 This fork builds on the work of the [ytmdesktop](https://github.com/ytmdesktop/ytmdesktop) contributors:
