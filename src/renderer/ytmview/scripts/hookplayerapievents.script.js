@@ -5,8 +5,8 @@
     // We don't want to see everything in the store as there can be some sensitive data so we only send what's necessary to operate
     let state = ytmStore.getState();
 
-    const videoId = document.querySelector("ytmusic-app-layout>ytmusic-player-bar").playerApi.getPlayerResponse()?.videoDetails?.videoId;
-    const likeButtonData = document.querySelector("ytmusic-app-layout>ytmusic-player-bar").querySelector("ytmusic-like-button-renderer").data;
+    const videoId = document.querySelector("ytmusic-app-layout>ytmusic-player-bar").polymerController.playerApi.getPlayerResponse()?.videoDetails?.videoId;
+    const likeButtonData = document.querySelector("ytmusic-app-layout>ytmusic-player-bar").querySelector("ytmusic-like-button-renderer").polymerController.data;
     const defaultLikeStatus = likeButtonData?.likeStatus ?? "UNKNOWN";
     const storeLikeStatus = state.likeStatus.videos[videoId];
     
@@ -18,21 +18,21 @@
     window.ytmd.sendStoreUpdate(state.queue, likeStatus, volume, muted, adPlaying);
   }
 
-  document.querySelector("ytmusic-app-layout>ytmusic-player-bar").playerApi.addEventListener("onVideoProgress", progress => {
+  document.querySelector("ytmusic-app-layout>ytmusic-player-bar").polymerController.playerApi.addEventListener("onVideoProgress", progress => {
     window.ytmd.sendVideoProgress(progress);
   });
-  document.querySelector("ytmusic-app-layout>ytmusic-player-bar").playerApi.addEventListener("onStateChange", state => {
+  document.querySelector("ytmusic-app-layout>ytmusic-player-bar").polymerController.playerApi.addEventListener("onStateChange", state => {
     window.ytmd.sendVideoState(state);
   });
-  document.querySelector("ytmusic-app-layout>ytmusic-player-bar").playerApi.addEventListener("onVideoDataChange", event => {
+  document.querySelector("ytmusic-app-layout>ytmusic-player-bar").polymerController.playerApi.addEventListener("onVideoDataChange", event => {
     if (event.playertype === 1 && (event.type === "dataloaded" || event.type === "dataupdated")) {
-      let videoDetails = document.querySelector("ytmusic-app-layout>ytmusic-player-bar").playerApi.getPlayerResponse().videoDetails;
-      let playlistId = document.querySelector("ytmusic-app-layout>ytmusic-player-bar").playerApi.getPlaylistId();
+      let videoDetails = document.querySelector("ytmusic-app-layout>ytmusic-player-bar").polymerController.playerApi.getPlayerResponse().videoDetails;
+      let playlistId = document.querySelector("ytmusic-app-layout>ytmusic-player-bar").polymerController.playerApi.getPlaylistId();
       let album = null;
       let hasFullMetadata = false;
 
       // If playing from online sources this usually is filled out with the first dataupdated which is followed after dataloaded. While offline this is always filled
-      let currentItem = document.querySelector("ytmusic-app-layout>ytmusic-player-bar").currentItem;
+      let currentItem = document.querySelector("ytmusic-app-layout>ytmusic-player-bar").polymerController.currentItem;
       if (currentItem !== null && currentItem !== undefined) {
         hasFullMetadata = true;
 
@@ -54,7 +54,7 @@
       }
 
       let state = ytmStore.getState();
-      const likeButtonData = document.querySelector("ytmusic-app-layout>ytmusic-player-bar").querySelector("ytmusic-like-button-renderer").data;
+      const likeButtonData = document.querySelector("ytmusic-app-layout>ytmusic-player-bar").querySelector("ytmusic-like-button-renderer").polymerController.data;
       const defaultLikeStatus = likeButtonData?.likeStatus ?? "UNKNOWN";
       const storeLikeStatus = state.likeStatus.videos[videoDetails.videoId];
       

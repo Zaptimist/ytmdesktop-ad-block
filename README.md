@@ -40,6 +40,23 @@ For development mode (with hot-reload):
 npm start
 ```
 
+## Startup verification
+
+Before changing startup/player integration code, reproduce the problem with the real app. Before handing off a change, run:
+
+```sh
+npm ci --include=dev --legacy-peer-deps
+npm run test:startup
+```
+
+This runs TypeScript checking, builds the desktop application, and launches its production bundles in Electron without a development server. The check uses a fresh temporary profile, software rendering and English consent UI. It rejects optional cookies if asked; it never signs in or reuses your installed app's settings. OS protocol/login registrations and automatic updates are excluded from this test.
+
+A pass requires the actual music preload to finish (a consent page alone is not success), the music view to be attached to a visible window, the search box and player to be ready, and a desktop volume command to reach the player. The original volume is then restored. The check exits nonzero on failure or a 60-second startup timeout.
+
+Each run prints an `out/startup-*` directory containing `result.json`, `electron.log`, and screenshots when capture is possible. `shell.png` is the app's host renderer; `page.png` is the separate YouTube Music view. Inspect the page screenshot before reporting visual verification. Temporary profiles are removed when the test process exits; evidence remains under the Git-ignored `out/` directory.
+
+An internet connection and a working graphical session are required. Network/consent failures are failures, not skipped tests. This checks anonymous startup and volume control, not signed-in playback, installer behavior, updates, or hardware acceleration. Run it on Windows for Windows-specific assurance; a Linux pass does not prove the Windows build works.
+
 ## Original Project Contributors
 
 This fork builds on the work of the [ytmdesktop](https://github.com/ytmdesktop/ytmdesktop) contributors:

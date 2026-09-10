@@ -1,5 +1,5 @@
 import IIntegration from "../integration";
-import Fastify, { FastifyInstance } from "fastify";
+import Fastify, { FastifyError, FastifyInstance } from "fastify";
 import FastifyIO from "fastify-socket.io/dist/index";
 import CompanionServerAPIv1 from "./api/v1";
 import { MemoryStoreSchema, StoreSchema } from "~shared/store/schema";
@@ -7,8 +7,7 @@ import Conf from "conf";
 import { BrowserView, safeStorage } from "electron";
 import { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import { AuthToken } from "~shared/integrations/companion-server/types";
-import { RemoteSocket } from "socket.io";
-import { DefaultEventsMap } from "socket.io/dist/typed-events";
+import { DefaultEventsMap, RemoteSocket } from "socket.io";
 import cors from "@fastify/cors";
 import MemoryStore from "../../memory-store";
 import log from "electron-log";
@@ -50,7 +49,7 @@ export default class CompanionServer implements IIntegration {
         return this.memoryStore;
       }
     });
-    this.fastifyServer.setErrorHandler((error, request, reply) => {
+    this.fastifyServer.setErrorHandler<FastifyError>((error, request, reply) => {
       if (!isDefinedAPIError(error)) {
         if (!error.statusCode || error.statusCode >= 500) {
           log.error(error);

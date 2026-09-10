@@ -56,7 +56,7 @@ const FORCE_SONG_MODE_SCRIPT = `
   var ytmStore = window.__YTMD_HOOK__ && window.__YTMD_HOOK__.ytmStore;
   if (!ytmStore) return;
 
-  var playerBar = document.querySelector("ytmusic-app-layout>ytmusic-player-bar");
+  var playerBar = document.querySelector("ytmusic-app-layout>ytmusic-player-bar")?.polymerController;
   if (!playerBar || !playerBar.playerApi) return;
 
   var lastHandledVideoId = '';
@@ -167,7 +167,7 @@ const AUTO_DISMISS_YOU_THERE_SCRIPT = `
 
       // Resume playback after dismissing — the popup pauses the player
       setTimeout(function() {
-        var playerBar = document.querySelector('ytmusic-app-layout>ytmusic-player-bar');
+        var playerBar = document.querySelector('ytmusic-app-layout>ytmusic-player-bar')?.polymerController;
         if (playerBar && playerBar.playerApi && !playerBar.playing) {
           playerBar.playerApi.playVideo();
         }

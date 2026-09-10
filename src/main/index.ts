@@ -1314,7 +1314,7 @@ const createMainWindow = (): void => {
     event.preventDefault();
   });
 
-  mainWindow.on("ready-to-show", () => {
+  mainWindow.webContents.once("did-finish-load", () => {
     mainWindow.show();
     // Open the DevTools.
     if (process.env.NODE_ENV === "development") {
